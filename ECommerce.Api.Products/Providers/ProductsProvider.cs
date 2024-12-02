@@ -2,10 +2,12 @@
 using ECommerce.Api.Products.Db;
 using ECommerce.Api.Products.Interfaces;
 using ECommerce.Api.Products.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ECommerce.Api.Products.Providers
@@ -66,9 +68,27 @@ namespace ECommerce.Api.Products.Providers
             }
         }
 
-        public Task<(bool IsSuccess, IEnumerable<Models.Product> Products, string ErrorMessage)> GetProductsAsync()
+        public async Task<(bool IsSuccess, IEnumerable<Models.Product> Products, string ErrorMessage)> GetProductsAsync()
         {
-            throw new System.NotImplementedException();
+            try
+            {
+                var products = await dbContext.Products.ToListAsync();
+
+                if(products != null && products.Any())
+                {
+                    var results = mapper.Map<IEnumerable<Db.Product>, IEnumerable<Models.Product>>(products);
+                    return (true, results, null);
+
+                }
+
+                return (false, null, "Not Found...");
+            }
+            catch (Exception ex)
+            {
+                logger?.LogError(ex.ToString());
+
+                return (false, null, ex.Message);
+            }
         }
     }
 }
